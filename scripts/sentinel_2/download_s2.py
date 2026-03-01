@@ -1,18 +1,53 @@
 import os
+import yaml
 import requests
+from datetime import datetime, timezone
 from get_temp_token_s2 import get_token
 
+"""
+What the script does:
+- open and extract yaml parameters
+- authentication to API
+- mask no data, saturated, clouds, cloud shadow, cirrus
+- send payload to sentinel-hub API & save response and metadata
+"""
+
+
+# open and extract yaml parameters
+
+with open(r"C:\Users\Basti\Documents\uni_lund\GISM01\04_machine_learning\configs\config_s2.yaml", "r") as f:
+    config = yaml.safe_load(f)
+
+xmin = config["bbox"]["xmin"]
+ymin = config["bbox"]["ymin"]
+xmax = config["bbox"]["xmax"]
+ymax = config["bbox"]["ymax"]
+crs = config["bbox"]["crs"]
+
+resolution = config["resolution"]
+tile_size = config["tiling"]["tile_size"]
+
+seasonal_windows = config["sentinel2"]["seasonal_windows"]
+max_cloud = config["sentinel2"]["max_cloud_coverage"]
+
+output_folder = config["output_folder"]
+
+
+# authentication to API from get_temp_token_s2 script
 access_token = get_token()
 
 headers = {
     "Authorization": f"Bearer {access_token}"
 }
 
+
+
+# mask no data, saturated, clouds, cloud shadow, cirrus (keep snow/glaciers)
 evalscript = """
 //VERSION=3
 function setup() {
   return {
-    input: ["B02","B03","B04","B08","B11","B12"],
+    input: ["B02","B03","B04","B08","B11","B12","SCL"],
     output: {
       bands: 6,
       sampleType: "FLOAT32"
@@ -21,87 +56,119 @@ function setup() {
 }
 
 function evaluatePixel(sample) {
-  return [sample.B02, sample.B03, sample.B04,
-          sample.B08, sample.B11, sample.B12];
+
+if (sample.SCL === 0 ||
+    sample.SCL === 1 ||
+    sample.SCL === 3 ||
+    sample.SCL === 8 ||
+    sample.SCL === 9 ||
+    sample.SCL === 10) {
+
+    return [NaN, NaN, NaN, NaN, NaN, NaN];
+}
+
+  return [
+    sample.B02,
+    sample.B03,
+    sample.B04,
+    sample.B08,
+    sample.B11,
+    sample.B12
+  ];
 }
 """
 
-output_folder = r"E:\Lund\sentinel_2_data"
 
-tile_size = 10000
-resolution = 10
+# for each specified timeframe (2022-2025, August-September), query scenes & download
 
-xmin = 649797
-ymin = 7526750
-xmax = 699797
-ymax = 7576750
+tile_counter = 0
 
-tile_id = 0
+for window in seasonal_windows:
 
-for x in range(xmin, xmax, tile_size):
-    for y in range(ymin, ymax, tile_size):
+    year = window["year"]
+    date_from = window["from"]
+    date_to = window["to"]
 
-        bbox = [
-            x,
-            y,
-            (x + tile_size),
-            (y + tile_size)
-        ]
+    print(f"\nProcessing season: {year} ({date_from} -> {date_to})")
 
-        payload = {
-            "input": {
-                "bounds": {
-                    "bbox": bbox,
-                    "properties": {
-                        "crs": "http://www.opengis.net/def/crs/EPSG/0/3006"
-                    }
+    # For every year create a folder
+    year_folder = os.path.join(output_folder, str(year))
+    os.makedirs(year_folder, exist_ok=True)
+
+
+    # send payload to sentinel-hub API & save response and metadata
+    for x in range(xmin, xmax, tile_size):
+        for y in range(ymin, ymax, tile_size):
+
+            bbox = [x, y, x + tile_size, y + tile_size]
+
+            width = int(tile_size / resolution)
+            height = int(tile_size / resolution)
+
+            payload = {
+                "input": {
+                    "bounds": {
+                        "bbox": bbox,
+                        "properties": {
+                            "crs": f"http://www.opengis.net/def/crs/EPSG/0/{crs}"
+                        }
+                    },
+                    "data": [{
+                        "type": "sentinel-2-l2a",
+                        "dataFilter": {
+                            "timeRange": {
+                                "from": date_from,
+                                "to": date_to
+                            },
+                            "maxCloudCoverage": max_cloud
+                        }
+                    }]
                 },
-                "data": [{
-                    "type": "sentinel-2-l2a",
-                    "dataFilter": {
-                        "timeRange": {
-                            "from": "2024-09-15T00:00:00Z",
-                            "to": "2024-09-15T23:59:59Z"
-                        },
-                        "mosaickingOrder": "leastCC"
-                    }
-                }]
-            },
-            "output": {
-                "width": 1000,
-                "height": 1000,
-                "responses": [{
-                    "identifier": "default",
-                    "format": {
-                        "type": "image/tiff"
-                    }
-                }]
-            },
-            "evalscript": evalscript
-        }
+                "output": {
+                    "width": width,
+                    "height": height,
+                    "responses": [{
+                        "identifier": "default",
+                        "format": {"type": "image/tiff"}
+                    }]
+                },
+                "evalscript": evalscript
+            }
 
-        print(f"Downloading tile {tile_id} | BBOX: {bbox}")
+            print(f"Downloading Year {year} | Tile {tile_counter} | BBOX {bbox}")
 
-        response = requests.post(
-            "https://services.sentinel-hub.com/api/v1/process",
-            headers=headers,
-            json=payload,
-            stream=True
-        )
-        
-        print(response.status_code)
-        print(response.headers.get("Content-Type"))
+            response = requests.post(
+                "https://services.sentinel-hub.com/api/v1/process",
+                headers=headers,
+                json=payload,
+                stream=True
+            )
 
-        if response.status_code == 200:
-            filename = os.path.join(output_folder, f"tile_{tile_id}.tif")
-            with open(filename, "wb") as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            print(f"Saved: {filename}")
-        else:
-            print(f"Error {response.status_code}")
-            print(response.text)
+            if response.status_code == 200:
 
-        tile_id += 1
+                filename = os.path.join(
+                    year_folder,
+                    f"tile_{tile_counter}.tif"
+                )
 
-print("Download complete.")
+                with open(filename, "wb") as f:
+                    f.write(response.content)
+
+                # metadata
+                meta_file = filename.replace(".tif", "_meta.txt")
+                with open(meta_file, "w") as m:
+                    m.write(f"Downloaded: {datetime.now(timezone.utc)}\n")
+                    m.write(f"BBOX: {bbox}\n")
+                    m.write(f"Year: {year}\n")
+                    m.write(f"Time range: {date_from} -> {date_to}\n")
+                    m.write(f"Max cloud: {max_cloud}\n")
+
+                print(f"Saved: {filename}")
+
+            else:
+                print(f"Error {response.status_code}")
+                print(response.text)
+
+            tile_counter += 1
+
+print("\nDownload complete.")

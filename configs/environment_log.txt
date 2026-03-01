@@ -1,0 +1,8 @@
+- conda create -n thesis python=3.11
+- conda init bash (restart bash)
+- conda activate thesis
+- vsc: >python select interpreter -> thesis
+- conda config --add channels conda-forge
+- conda config --set channel_priority strict
+- install all packages
+- package list: conda env export > /c/Users/Basti/Documents/uni_lund/GISM01/04_machine_learning/configs/environment.yml

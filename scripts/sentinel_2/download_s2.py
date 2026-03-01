@@ -81,9 +81,11 @@ if (sample.SCL === 0 ||
 
 # for each specified timeframe (2022-2025, August-September), query scenes & download
 
-tile_counter = 0
+
 
 for window in seasonal_windows:
+    # resets counter after every year folder, so that all tiles have the same name
+    tile_counter = 0
 
     year = window["year"]
     date_from = window["from"]

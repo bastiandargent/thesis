@@ -7,7 +7,7 @@ from rasterio.merge import merge
 # -------------------------
 
 input_folder = r"E:/Lund/sentinel_2_data/composite"
-output_path = os.path.join(input_folder, "sentinel2_composite_mosaic.tif")
+output_path = r"/home/basti/Documents/Lund/Master_Thesis/03_processed/sentinel_2/"
 
 # -------------------------
 # COLLECT TILES

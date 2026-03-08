@@ -3,7 +3,8 @@ import rasterio
 import numpy as np
 
 
-tile_folder = r"home/basti/Documents/Lund/Master_Thesis/02_raw_data"
+tile_folder = r"/home/basti/Documents/Lund/Master_Thesis/02_raw_data"
+
 
 # Thresholds (adjust if needed)
 upper_threshold = 1.5

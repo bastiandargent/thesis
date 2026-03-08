@@ -1,3 +1,4 @@
 sentinel 2 script execution order:
 - download_s2.py (calls already get_temp_token_s2.py)
-- 
+- check_correct_scaling_s2.py --> shows there are very few above 1
+-

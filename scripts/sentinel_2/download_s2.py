@@ -17,7 +17,7 @@ helpful examples: https://docs.sentinel-hub.com/api/latest/data/sentinel-2-l2a/e
 
 # open and extract yaml parameters
 
-with open(r"C:\Users\Basti\Documents\uni_lund\GISM01\04_machine_learning\configs\config_s2.yaml", "r") as f:
+with open(r"/home/basti/Documents/Lund/Master_Thesis/04_machine_learning/thesis/configs/config_s2.yaml", "r") as f:
     config = yaml.safe_load(f)
 
 xmin = config["bbox"]["xmin"]

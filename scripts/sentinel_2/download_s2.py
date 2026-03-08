@@ -91,8 +91,6 @@ for window in seasonal_windows:
     date_from = window["from"]
     date_to = window["to"]
 
-    print(f"\nProcessing season: {year} ({date_from} -> {date_to})")
-
     # For every year create a folder
     year_folder = os.path.join(output_folder, str(year))
     os.makedirs(year_folder, exist_ok=True)
@@ -122,7 +120,8 @@ for window in seasonal_windows:
                                 "from": date_from,
                                 "to": date_to
                             },
-                            "maxCloudCoverage": max_cloud
+                            "maxCloudCoverage": max_cloud,
+                            "mosaickingOrder": "leastCC"
                         }
                     }]
                 },
@@ -132,12 +131,15 @@ for window in seasonal_windows:
                     "responses": [{
                         "identifier": "default",
                         "format": {"type": "image/tiff"}
-                    }]
+                    }],
+                    "metadata": {
+                        "bounds": True
+                    }
                 },
                 "evalscript": evalscript
             }
 
-            print(f"Downloading Year {year} | Tile {tile_counter} | BBOX {bbox}")
+            print(f"Downloading Year {year} Tile {tile_counter}")
 
             response = requests.post(
                 "https://services.sentinel-hub.com/api/v1/process",
@@ -148,24 +150,10 @@ for window in seasonal_windows:
 
             if response.status_code == 200:
 
-                filename = os.path.join(
-                    year_folder,
-                    f"tile_{tile_counter}.tif"
-                )
+                filename = os.path.join(year_folder, f"tile_{tile_counter}.tif")
 
                 with open(filename, "wb") as f:
                     f.write(response.content)
-
-                # metadata
-                meta_file = filename.replace(".tif", "_meta.txt")
-                with open(meta_file, "w") as m:
-                    m.write(f"Downloaded: {datetime.now(timezone.utc)}\n")
-                    m.write(f"BBOX: {bbox}\n")
-                    m.write(f"Year: {year}\n")
-                    m.write(f"Time range: {date_from} -> {date_to}\n")
-                    m.write(f"Max cloud: {max_cloud}\n")
-
-                print(f"Saved: {filename}")
 
             else:
                 print(f"Error {response.status_code}")
@@ -173,4 +161,24 @@ for window in seasonal_windows:
 
             tile_counter += 1
 
-print("\nDownload complete.")
+        
+# metadata
+
+metadata = os.path.join(output_folder, f"metadata.txt")
+
+with open(metadata, "w") as m:
+    m.write("Dataset: Sentinel-2 L2A\n")
+    m.write("Source: Sentinel Hub Process API\n\n")
+
+    m.write(f"Download Date: {datetime.now(timezone.utc)}\n")
+    m.write(f"BBOX: {bbox}\n")
+    m.write(f"CRS: EPSG:{crs}\n")
+    m.write(f"Resolution: {resolution} m\n")
+    m.write(f"Tile Size: {tile_size} m\n")
+    m.write(f"Max cloud coverage: {max_cloud}%\n")
+    m.write(f"Bands: B02 B03 B04 B08 B11 B12\n")
+    m.write("Masked SCL classes: 0,1,3,8,9,10\n\n")
+    for window in seasonal_windows:
+        m.write(f"Year {window['year']}: {window['from']} to {window['to']}\n")
+
+print("\nFinished Downloading.")

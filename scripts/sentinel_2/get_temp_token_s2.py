@@ -2,6 +2,8 @@ import os
 import requests
 from dotenv import load_dotenv
 
+# expires 15th of March
+
 load_dotenv()
 
 CLIENT_ID = os.getenv("CLIENT_ID")

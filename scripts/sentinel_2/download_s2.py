@@ -10,6 +10,8 @@ What the script does:
 - authentication to API
 - mask no data, saturated, clouds, cloud shadow, cirrus
 - send payload to sentinel-hub API & save response and metadata
+
+helpful examples: https://docs.sentinel-hub.com/api/latest/data/sentinel-2-l2a/examples/
 """
 
 
@@ -48,6 +50,7 @@ evalscript = """
 function setup() {
   return {
     input: ["B02","B03","B04","B08","B11","B12","SCL"],
+    mosaicking: Mosaicking.SIMPLE,
     output: {
       bands: 6,
       sampleType: "FLOAT32"
@@ -104,6 +107,8 @@ for window in seasonal_windows:
 
             width = int(tile_size / resolution)
             height = int(tile_size / resolution)
+
+            # OpenAPI reference: https://docs.sentinel-hub.com/api/latest/reference/
 
             payload = {
                 "input": {

@@ -94,11 +94,6 @@ for window in seasonal_windows:
     date_from = window["from"]
     date_to = window["to"]
 
-    # For every year create a folder
-    year_folder = os.path.join(output_folder, str(year))
-    os.makedirs(year_folder, exist_ok=True)
-
-
     # send payload to sentinel-hub API & save response and metadata
     for x in range(xmin, xmax, tile_size):
         for y in range(ymin, ymax, tile_size):
@@ -155,7 +150,7 @@ for window in seasonal_windows:
 
             if response.status_code == 200:
 
-                filename = os.path.join(year_folder, f"tile_{tile_counter}.tif")
+                filename = os.path.join(output_folder, f"{year}_tile_{tile_counter:02d}.tif")
 
                 with open(filename, "wb") as f:
                     f.write(response.content)

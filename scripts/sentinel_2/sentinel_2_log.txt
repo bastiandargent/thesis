@@ -1,4 +1,7 @@
 sentinel 2 script execution order:
 - download_s2.py (calls already get_temp_token_s2.py)
-- check_correct_scaling_s2.py --> shows there are very few above 1
--
+- optional: check_correct_scaling_s2.py --> shows very few outliers
+- merge_tiles_s2.py --> merges tiles for every which results in 4 tifs
+- composite
+- mask water or derive indices first?
+

@@ -20,19 +20,23 @@ for year in years:
     print(f"{year}: {len(tiles)} tiles")
 
     srcs = [rasterio.open(t) for t in tiles]
-    mosaic, transform = merge(srcs)
 
-    meta = srcs[0].meta.copy()
-    meta.update(
-        height=mosaic.shape[1],
-        width=mosaic.shape[2],
-        transform=transform,
-        compress="deflate"
-    )
+    mosaic, transform = merge(srcs)
 
     out_path = os.path.join(out, f"{year}_mosaic.tif")
 
-    with rasterio.open(out_path, "w", **meta) as dst:
+    with rasterio.open(
+        out_path,
+        "w",
+        driver="GTiff",
+        height=mosaic.shape[1],
+        width=mosaic.shape[2],
+        count=mosaic.shape[0],
+        dtype=mosaic.dtype,
+        crs=srcs[0].crs,
+        transform=transform,
+        compress="deflate"
+    ) as dst:
         dst.write(mosaic)
 
     for s in srcs:

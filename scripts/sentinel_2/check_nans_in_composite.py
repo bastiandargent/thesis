@@ -1,7 +1,7 @@
 import rasterio
 import numpy as np
 
-path = "/home/basti/Documents/Lund/Master_Thesis/03_processed/sentinel_2/composite/sentinel2_median_composite.tif"
+path = "/home/basti/Documents/Lund/Master_Thesis/03_processed/sentinel_2/composite/sentinel2_composite_500m.tif"
 
 with rasterio.open(path) as src:
     data = src.read()

@@ -20,7 +20,7 @@ for year in years:
 
     print(f"Loaded {year}")
 
-# stack → (time, bands, height, width)
+# stack to (time, bands, height, width)
 stack = np.stack(arrays)
 
 # median composite ignoring NaN

@@ -5,3 +5,7 @@ sentinel 2 script execution order:
 - composite
 - mask water or derive indices first?
 
+- derive_indices_s2.py
+    - why
+    -
+

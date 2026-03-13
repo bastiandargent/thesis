@@ -19,4 +19,4 @@ sentinel2:
     
   max_cloud_coverage: 20
 
-output_folder: "/home/basti/Documents/Lund/Master_Thesis/02_raw_data"
+output_folder: "/home/basti/Documents/Lund/Master_Thesis/02_raw_data/sentinel2"

@@ -1,0 +1,4 @@
+.env
+.idea/
+.ruff_cache
+__pycache__/

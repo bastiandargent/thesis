@@ -1,0 +1,9 @@
+Top to Bottom is Order of Tuning:
+
+- tried different spatial resolution: 500 m -> 20 m (best accuracy) -> 100 m
+- used 20 m spatial resolution to test n_estimators: 200, 500, 800
+- use fixed n_estimators=500 for testing class_weight: None, "balanced"
+- use fixed n_estimators=500 and class_weight="None" for testing rf_spatial_cv_multiple_parameters.py each unique set of:
+    "max_features": "sqrt", "log2", 0.3, 0.5
+    "max_depth": None, 10, 20
+    "min_samples_leaf": 1, 3, 5
